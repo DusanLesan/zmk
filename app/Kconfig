@@ -417,6 +417,15 @@ config ZMK_IDLE_SLEEP_TIMEOUT
     int "Milliseconds of inactivity before entering deep sleep"
     default 900000
 
+config ZMK_DEEP_SLEEP_DEFER_BLE
+    bool "Defer deep sleep while connected over Bluetooth"
+    depends on ZMK_BLE
+    help
+      When enabled, deep sleep is not entered while a Bluetooth link is active
+      (to the host on typical boards, or to the central half on a split peripheral).
+      After disconnect, deep sleep uses CONFIG_ZMK_IDLE_SLEEP_TIMEOUT from the last
+      activity as usual. USB power still suppresses deep sleep when present.
+
 endif # ZMK_SLEEP
 
 config ZMK_EXT_POWER

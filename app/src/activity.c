@@ -22,6 +22,13 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #include <zmk/activity.h>
 
+#if IS_ENABLED(CONFIG_ZMK_DEEP_SLEEP_DEFER_BLE)
+#include <zmk/ble.h>
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+#include <zmk/split/bluetooth/peripheral.h>
+#endif
+#endif
+
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
 #include <zmk/usb.h>
 #endif
@@ -46,6 +53,18 @@ static uint32_t activity_last_uptime;
 
 #if IS_ENABLED(CONFIG_ZMK_SLEEP)
 #define MAX_SLEEP_MS CONFIG_ZMK_IDLE_SLEEP_TIMEOUT
+#endif
+
+#if IS_ENABLED(CONFIG_ZMK_SLEEP) && IS_ENABLED(CONFIG_ZMK_DEEP_SLEEP_DEFER_BLE)
+static bool activity_ble_connected(void) {
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+    return zmk_split_bt_peripheral_is_connected();
+#elif IS_ENABLED(CONFIG_ZMK_BLE)
+    return zmk_ble_active_profile_is_connected();
+#else
+    return false;
+#endif
+}
 #endif
 
 int raise_event(void) {
@@ -75,7 +94,11 @@ void activity_work_handler(struct k_work *work) {
     int32_t current = k_uptime_get();
     int32_t inactive_time = current - activity_last_uptime;
 #if IS_ENABLED(CONFIG_ZMK_SLEEP)
-    if (inactive_time > MAX_SLEEP_MS && !is_usb_power_present()) {
+    if (inactive_time > MAX_SLEEP_MS && !is_usb_power_present()
+#if IS_ENABLED(CONFIG_ZMK_DEEP_SLEEP_DEFER_BLE)
+        && !activity_ble_connected()
+#endif
+    ) {
         // Put devices in suspend power mode before sleeping
         set_state(ZMK_ACTIVITY_SLEEP);
 

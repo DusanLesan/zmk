@@ -22,6 +22,8 @@ This state uses very little power, but it may take a few seconds to reconnect af
 
 Deep sleep must be enabled via its corresponding [config](../config/power.md#low-power-states).
 
+Optionally, [defer deep sleep while a Bluetooth link is active](../config/power.md#low-power-states) using `CONFIG_ZMK_DEEP_SLEEP_DEFER_BLE`. When enabled, deep sleep is not entered from idle while connected (to the host on typical devices, or to the central half on a split peripheral). After disconnect, `CONFIG_ZMK_IDLE_SLEEP_TIMEOUT` still applies from the last activity. USB power continues to suppress deep sleep when present.
+
 ### Wakeup Sources
 
 Using deep sleep requires `kscan` nodes to have the `wakeup-source` property to enable them to wake the keyboard, e.g.:
